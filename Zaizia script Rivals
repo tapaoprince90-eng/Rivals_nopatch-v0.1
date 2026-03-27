@@ -1,0 +1,115 @@
+-- SOUND & INTRO EFFECT
+local Sound = Instance.new("Sound")
+Sound.SoundId = "rbxassetid://6042053626" -- Clean "Success" Click Sound
+Sound.Parent = game.Workspace
+Sound:Play()
+
+-- BEAST INTRO NOTIFICATION
+game:GetService("StarterGui"):SetCore("SendNotification", {
+    Title = "BEAST MOD LOADED",
+    Text = "Sniper Arena: Ultra Edition v1.0",
+    Duration = 5,
+    Icon = "rbxassetid://10734950309"
+})
+
+local Fluent = loadstring(game:HttpGet("https://github.com/dawid-scripts/Fluent/releases/latest/download/main.lua"))()
+
+local Window = Fluent:CreateWindow({
+    Title = "Sniper Arena [ULTRA]",
+    SubTitle = "by tapaoprince90",
+    TabWidth = 160,
+    Size = UDim2.fromOffset(580, 460),
+    Acrylic = true,
+    Theme = "Dark"
+})
+
+-- VARIABLES
+local TargetPart = "Head"
+local AimbotEnabled = false
+local HitboxEnabled = false
+local HitboxSize = 5
+local FOVVisible = true
+local FOVRadius = 100
+
+-- FOV CIRCLE (Yung White Circle na gusto mo)
+local FOVCircle = Drawing.new("Circle")
+FOVCircle.Thickness = 2
+FOVCircle.Color = Color3.fromRGB(255, 255, 255)
+FOVCircle.Filled = false
+FOVCircle.Transparency = 0.8
+
+-- TABS
+local Tabs = {
+    Main = Window:AddTab({ Title = "Combat", Icon = "crosshair" }),
+    Settings = Window:AddTab({ Title = "Settings", Icon = "settings" })
+}
+
+-- AIMBOT SECTION
+Tabs.Main:AddToggle("Aimlock", {Title = "Aimlock (Head)", Default = false}):OnChanged(function(Value)
+    AimbotEnabled = Value
+end)
+
+Tabs.Main:AddToggle("ShowFOV", {Title = "Show FOV Circle", Default = true}):OnChanged(function(Value)
+    FOVVisible = Value
+end)
+
+Tabs.Main:AddSlider("FOVSize", {
+    Title = "FOV Size",
+    Description = "Adjust the white circle",
+    Default = 100,
+    Min = 50,
+    Max = 500,
+    Rounding = 0,
+    Callback = function(Value)
+        FOVRadius = Value
+    end
+})
+
+-- HITBOX SECTION
+Tabs.Main:AddToggle("HitboxExpander", {Title = "Hitbox Head-Amount", Default = false}):OnChanged(function(Value)
+    HitboxEnabled = Value
+end)
+
+Tabs.Main:AddSlider("HSize", {
+    Title = "Head Hitbox Size",
+    Default = 5,
+    Min = 1,
+    Max = 20,
+    Rounding = 1,
+    Callback = function(Value)
+        HitboxSize = Value
+    end
+})
+
+-- LOGIC: FOV & AIMBOT
+game:GetService("RunService").RenderStepped:Connect(function()
+    FOVCircle.Visible = FOVVisible
+    FOVCircle.Radius = FOVRadius
+    FOVCircle.Position = game:GetService("UserInputService"):GetMouseLocation()
+
+    if AimbotEnabled then
+        -- Simple Aim Logic (Delta Compatible)
+        for _, v in pairs(game.Players:GetPlayers()) do
+            if v ~= game.Players.LocalPlayer and v.Character and v.Character:FindFirstChild("Head") then
+                local pos, onScreen = game.Workspace.CurrentCamera:WorldToViewportPoint(v.Character.Head.Position)
+                local dist = (Vector2.new(pos.X, pos.Y) - game:GetService("UserInputService"):GetMouseLocation()).Magnitude
+                
+                if onScreen and dist <= FOVRadius then
+                    game.Workspace.CurrentCamera.CFrame = CFrame.new(game.Workspace.CurrentCamera.CFrame.Position, v.Character.Head.Position)
+                end
+            end
+        end
+    end
+
+    if HitboxEnabled then
+        for _, v in pairs(game.Players:GetPlayers()) do
+            if v ~= game.Players.LocalPlayer and v.Character and v.Character:FindFirstChild("Head") then
+                v.Character.Head.Size = Vector3.new(HitboxSize, HitboxSize, HitboxSize)
+                v.Character.Head.Transparency = 0.5
+                v.Character.Head.CanCollide = false
+            end
+        end
+    end
+end)
+
+Window:SelectTab(1)
